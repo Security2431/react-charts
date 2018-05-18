@@ -1,21 +1,18 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from 'react'
+import ChartList from './ChartList'
+import './style.css';
+
+const accounts = ['374756', '408559', '376862', '219161', '381174', '198572', '381546', '386780']
+const labels =   ['ST PRIORITY', 'Constellation', 'Night Owl Turbo', 'Hercules', 'SunTime', 'Expensivebuyer', 'Rumpelstilzchen Rage', 'RoboCop 2020 x 2']
 
 class App extends Component {
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
-        </p>
+      <div className="container">
+        <ChartList accounts={accounts} labels={labels}></ChartList>
       </div>
-    );
+    )
   }
 }
 
-export default App;
+export default App
