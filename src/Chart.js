@@ -163,9 +163,9 @@ export default class Chart extends Component {
     return {"data": data, "labels": labels, "last": last}
   }
 
-  updateData() {
+  updateData(val = 3) {
     const chartData = this.state.chartData   
-    const json =      this.parseData()
+    const json =      this.parseData(val)
     const data =      json.data
     const labels =    json.labels
     const last =      json.last
@@ -186,4 +186,14 @@ export default class Chart extends Component {
 /*
    this.setData()*/
   }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.value !== nextProps.value) {
+      this.updateData(nextProps.value)
+    }
+  }
+
+/*  componentWillUpdate(nextProps, nextState) {
+    console.log(nextProps, nextState, this.props.value)
+  }*/
 }

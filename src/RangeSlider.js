@@ -12,6 +12,10 @@ export default class RangeSlider extends Component {
       }
     }
   }
+  handleChange(value) {
+    this.props.changeSelected(value)
+    this.setState({ rangeSlider: { value: value } })
+  }
 
   render() {
     return (
@@ -20,7 +24,7 @@ export default class RangeSlider extends Component {
         maxValue={20}
         minValue={0}
         value={this.state.rangeSlider.value}
-        onChange={value => this.setState({ rangeSlider: { value: value } })} />
+        onChange={value => this.handleChange(value)} />
     )
   }
 }
