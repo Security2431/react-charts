@@ -143,7 +143,7 @@ export default class Chart extends Component {
     const last = values.map((item) => {
       const date = item[0].slice(0, item[0].length - 5)
       const diff = (lastVal > prevVal) ? prevVal : lastVal
-      return (date >= diff) && (item[2] - first)
+      return (date >= diff) ? (item[2] - first) : null
     })
 
     const data = values.map((item) => {
