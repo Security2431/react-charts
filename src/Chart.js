@@ -129,7 +129,6 @@ export default class Chart extends Component {
 
   parseData(substract = 3) {
     const dataset =  this.state.dataset
-    const first =    dataset[0][2]
     const start =    moment(new Date()).subtract(substract, "days").format('YYYY-MM-DD')
 
     const values = dataset.filter((item) => {
@@ -139,6 +138,7 @@ export default class Chart extends Component {
 
     const lastVal =     values[values[0].length - 1]
     const prevVal =     values[values[0].length - 2]
+    const first =       values[0][2]
 
     const last = values.map((item) => {
       const date = item[0].slice(0, item[0].length - 5)
