@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import {Line} from "react-chartjs-2"
-import * as zoom from 'chartjs-plugin-zoom'
-
-
+//import * as zoom from 'chartjs-plugin-zoom'
+import moment from 'moment'
 
 const chartOptions = {
 /*  pan: {
@@ -24,7 +23,7 @@ export default class Chart extends Component {
         labels: [],
         datasets: [
           {
-            label: '',
+            label: `${this.props.label} №${this.props.id}`,
             fill: true,
             lineTension: 0.1,
             backgroundColor: 'rgba(75,192,192,0.4)',
@@ -68,26 +67,33 @@ export default class Chart extends Component {
 
         ]
       },
+      dataset: {},
+      isLoading: false,
     }
   }
 
   render() {
+    const { isLoading } = this.state.isLoading
+
+    if (isLoading) {
+      return <p>Loading ...</p>
+    }
+
     return (
       <div className={`chart ${this.props.className}`}>
         <a href={`https://alpari.com/ru/investor/pamm/${this.props.id}/`} target="_blank">{this.props.label}</a>
         <Line
           data={this.state.chartData}
           options={chartOptions}
-          height={parseInt(this.props.height) && 100}
-          width={parseInt(this.props.width) && 100}
+          height={parseInt(this.props.height, 10) && 100}
+          width={parseInt(this.props.width, 10) && 100}
           />
       </div>
     )
   }
 
-  componentDidMount() {
-    console.log(`https://alpari.com/ru/investor/pamm/${this.props.id}/`)
-    fetch(`https://alpari.com/ru/investor/pamm/${this.props.id}/monitoring/hourly_equity_value.json?start=${this.props.start}&end=${this.props.end}`)
+  fetchData() {
+    fetch(`https://alpari.com/ru/investor/pamm/${this.props.id}/monitoring/hourly_equity_value.json?`)
     .then((response) => {
       var contentType = response.headers.get("content-type")
       if(contentType && contentType.includes("application/json")) {
@@ -97,36 +103,87 @@ export default class Chart extends Component {
     })
     .then((json) => { 
       /* process your JSON further */
-      const min = json[0][2]
-      let labels
-      const diffDate = new Date(this.props.end) - new Date(this.props.start)
-
-      console.log(json)
-
-      const data = json.map((item) => {
-        return item[2] - min
-      })
-
-      if (diffDate >= 1) {
-        labels = json.map((item) => {
-          return item[0].slice(0, item[0].length - 5)
-        })
-      } else {
-        labels = json.map((item) => {
-          return item[0].slice(-5)
-        })
-      }
-
-      const chartData = this.state.chartData
-      chartData.datasets[0].data = data
-      chartData.datasets[0].label = `${this.props.label} №${this.props.id}`
-      chartData.labels = labels
-
-
       this.setState({
-        chartData: chartData
+        "dataset": json,
+        "isLoading": false
       })
+
+      this.updateData()
     })
     .catch((error) => { console.log(error) })
+  }
+
+  getData(json) {
+    const first =      json[0][2]
+
+    const data = json.map((item) => {
+      return item[2] - first
+    })
+
+    const labels = json.map((item) => {
+      return item[0]
+    })
+
+    return {"data": data, "labels": labels}
+  }
+
+  parseData(substract = 3) {
+    const dataset =  this.state.dataset
+    const first =    dataset[0][2]
+    const start =    moment(new Date()).subtract(substract, "days").format('YYYY-MM-DD')
+
+    const values = dataset.filter((item) => {
+      const date = item[0].slice(0, item[0].length - 5)
+      return (date >= start) && item
+    })
+
+    const lastVal =     values[values[0].length - 1]
+    const prevVal =     values[values[0].length - 2]
+
+    const last = values.map((item) => {
+      const date = item[0].slice(0, item[0].length - 5)
+      const diff = (lastVal > prevVal) ? prevVal : lastVal
+      return (date >= diff) && (item[2] - first)
+    })
+
+    const data = values.map((item) => {
+      return item[2] - first
+    })
+
+    /*const labels = values.map((item) => {
+      if (diffDate) {
+        return item[0].slice(0, item[0].length - 5)
+      }
+      return item[0].slice(-5)
+    })*/
+    const labels = values.map((item) => {
+      return item[0]
+    })
+
+    return {"data": data, "labels": labels, "last": last}
+  }
+
+  updateData() {
+    const chartData = this.state.chartData   
+    const json =      this.parseData()
+    const data =      json.data
+    const labels =    json.labels
+    const last =      json.last
+
+    chartData.datasets[0].data = data
+    chartData.datasets[1].data = last
+    chartData.labels = labels
+
+
+    this.setState({
+      chartData: chartData
+    })
+  }
+
+  componentDidMount() {
+    this.setState({ isLoading: true })
+    this.fetchData()
+/*
+   this.setData()*/
   }
 }
