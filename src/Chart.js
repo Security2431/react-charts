@@ -93,7 +93,15 @@ export default class Chart extends Component {
   }
 
   fetchData() {
-    fetch(`https://alpari.com/ru/investor/pamm/${this.props.id}/monitoring/hourly_equity_value.json?`)
+    const proxyUrl =  'https://cors-anywhere.herokuapp.com/'
+    const targetUrl = `https://alpari.com/ru/investor/pamm/${this.props.id}/monitoring/hourly_equity_value.json?`
+    const query =     proxyUrl + targetUrl
+    const options = {
+      method: 'GET',
+      mode: 'cors',
+    }
+    
+    fetch(query, options)
     .then((response) => {
       var contentType = response.headers.get("content-type")
       if(contentType && contentType.includes("application/json")) {
