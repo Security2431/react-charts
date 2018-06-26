@@ -67,7 +67,7 @@ export default class Chart extends Component {
 
         ]
       },
-      dataset: {},
+      public_json: {},
       isLoading: false,
     }
   }
@@ -81,7 +81,14 @@ export default class Chart extends Component {
 
     return (
       <div className={`chart ${this.props.className}`}>
-        <a href={`https://alpari.com/ru/investor/pamm/${this.props.id}/`} target="_blank">{this.props.label}</a>
+        <div className="row justify-content-between">
+          <div className="col-auto">
+            <a href={`https://alpari.com/ru/investor/pamm/${this.props.id}/`} target="_blank">{this.props.label}</a>
+          </div>
+          <div className="col-auto">
+            
+          </div>
+        </div>
         <Line
           data={this.state.chartData}
           options={chartOptions}
@@ -112,10 +119,9 @@ export default class Chart extends Component {
     .then((json) => { 
       /* process your JSON further */
       this.setState({
-        "dataset": json,
+        "public_json": json,
         "isLoading": false
       })
-
       this.updateData()
     })
     .catch((error) => { console.log(error) })
@@ -135,51 +141,12 @@ export default class Chart extends Component {
     return {"data": data, "labels": labels}
   }
 
-  parseData(substract = 3) {
-    const dataset =  this.state.dataset
-    const start =    moment(new Date()).subtract(substract, "days").format('YYYY-MM-DD')
-
-    const values = dataset.filter((item) => {
-      const date = item[0].slice(0, item[0].length - 5)
-      return (date >= start) && item
-    })
-
-    const lastVal =     values[values[0].length - 1]
-    const prevVal =     values[values[0].length - 2]
-    const first =       values[0][2]
-
-    const last = values.map((item) => {
-      const date = item[0].slice(0, item[0].length - 5)
-      const diff = (lastVal > prevVal) ? prevVal : lastVal
-      return (date >= diff) ? (item[2] - first) : null
-    })
-
-    const data = values.map((item) => {
-      return item[2] - first
-    })
-
-    /*const labels = values.map((item) => {
-      if (diffDate) {
-        return item[0].slice(0, item[0].length - 5)
-      }
-      return item[0].slice(-5)
-    })*/
-    const labels = values.map((item) => {
-      return item[0]
-    })
-
-    return {"data": data, "labels": labels, "last": last}
-  }
-
   updateData(val = 3) {
-    const chartData = this.state.chartData   
-    const json =      this.parseData(val)
-    const data =      json.data
-    const labels =    json.labels
-    const last =      json.last
+    const chartData = this.state.chartData
+    const {data, labels, today} = this.parseData(val)
 
     chartData.datasets[0].data = data
-    chartData.datasets[1].data = last
+    chartData.datasets[1].data = today
     chartData.labels = labels
 
 
@@ -188,11 +155,39 @@ export default class Chart extends Component {
     })
   }
 
+  rate(first, last) {
+    const rateFirst = parseInt(first, 10) + 100
+    const rateLast = parseInt(last, 10) + 100
+    return (rateLast - rateFirst) / rateFirst * 100
+  }
+
+  parseData(substract = 3) {
+    const dataset =      this.state.public_json
+    const today =        moment(new Date()).format('YYYY-MM-DD') + " 00:00"
+    const startDate =    moment(new Date()).subtract(substract, "days").format('YYYY-MM-DD') // By default, start day is -3 days from now
+
+    const values = dataset.filter((item) => { // Filter all objects, which is behind startDate
+      //const currDate = item[0].slice(0, item[0].length - 5) // Slice hours and minutes from date
+      const currDate = item[0]
+      return (currDate >= startDate) && item
+    })
+
+    const first =       values[0][2]
+
+    const todayData = values.map((item) => {
+      return (item[0] >= today) ? this.rate(first, item[2]) : null
+    })
+
+    const allData = values.map((item) => this.rate(first, item[2]))
+
+    const labels = values.map((item) => item[0])  // Filter labels, which is behind startDate
+
+    return {"data": allData, "labels": labels, "today": todayData}
+  }
+
   componentDidMount() {
     this.setState({ isLoading: true })
     this.fetchData()
-/*
-   this.setData()*/
   }
 
   componentWillReceiveProps(nextProps) {
@@ -201,7 +196,9 @@ export default class Chart extends Component {
     }
   }
 
-/*  componentWillUpdate(nextProps, nextState) {
+/*  
+  componentWillUpdate(nextProps, nextState) {
     console.log(nextProps, nextState, this.props.value)
-  }*/
+  }
+*/
 }
