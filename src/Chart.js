@@ -3,6 +3,7 @@ import {Line} from "react-chartjs-2"
 //import * as zoom from 'chartjs-plugin-zoom'
 import moment from 'moment'
 
+
 const chartOptions = {
 /*  pan: {
     enabled: true,
@@ -69,7 +70,16 @@ export default class Chart extends Component {
       },
       public_json: {},
       isLoading: false,
+      todayOnly: [],
     }
+  }
+
+  todayRate() {
+    const data = this.state.todayOnly
+    let { 0 : firstDataToday ,[data.length - 1] : lastDataToday } = data
+
+    const diffDataToday = Math.round( (lastDataToday - firstDataToday) * 100 ) / 100
+    return diffDataToday
   }
 
   render() {
@@ -79,6 +89,9 @@ export default class Chart extends Component {
       return <p>Loading ...</p>
     }
 
+    const todayRateValue = this.todayRate().toString()
+    const rateColor = (todayRateValue > 0) ? "green" : (todayRateValue < 0) ? "red" : "grey"
+
     return (
       <div className={`chart ${this.props.className}`}>
         <div className="row justify-content-between">
@@ -86,7 +99,10 @@ export default class Chart extends Component {
             <a href={`https://alpari.com/ru/investor/pamm/${this.props.id}/`} target="_blank">{this.props.label}</a>
           </div>
           <div className="col-auto">
-            
+            <small className="rate" style={{ color: rateColor }}>
+              {todayRateValue > 0 ? <span className="rate__icon">&#9652;</span> : (todayRateValue < 0) && <span className="rate__icon">&#9662;</span> }&nbsp;
+              { this.todayRate().toString() + "%" }
+            </small>
           </div>
         </div>
         <Line
@@ -143,7 +159,7 @@ export default class Chart extends Component {
 
   updateData(val = 3) {
     const chartData = this.state.chartData
-    const {data, labels, today} = this.parseData(val)
+    const {data, labels, today, todayOnly} = this.parseData(val)
 
     chartData.datasets[0].data = data
     chartData.datasets[1].data = today
@@ -151,14 +167,15 @@ export default class Chart extends Component {
 
 
     this.setState({
-      chartData: chartData
+      chartData: chartData,
+      todayOnly: todayOnly
     })
   }
 
   rate(first, last) {
     const rateFirst = parseInt(first, 10) + 100
     const rateLast = parseInt(last, 10) + 100
-    return (rateLast - rateFirst) / rateFirst * 100
+    return Math.round(( (rateLast - rateFirst) / rateFirst * 100) * 100 ) / 100
   }
 
   parseData(substract = 3) {
@@ -173,16 +190,22 @@ export default class Chart extends Component {
     })
 
     const first =       values[0][2]
+    let todayOnly = []
 
     const todayData = values.map((item) => {
-      return (item[0] >= today) ? this.rate(first, item[2]) : null
+      if (item[0] >= today) {
+        todayOnly.push( this.rate(first, item[2]) )
+        return this.rate(first, item[2])
+      }
+
+      return null
     })
 
     const allData = values.map((item) => this.rate(first, item[2]))
 
     const labels = values.map((item) => item[0])  // Filter labels, which is behind startDate
 
-    return {"data": allData, "labels": labels, "today": todayData}
+    return {"data": allData, "labels": labels, "today": todayData, "todayOnly":  todayOnly}
   }
 
   componentDidMount() {
