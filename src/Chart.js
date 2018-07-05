@@ -83,11 +83,9 @@ export default class Chart extends Component {
   }
 
   render() {
-    const { isLoading } = this.state.isLoading
+    const { isLoading } = this.state
 
-    if (isLoading) {
-      return <p>Loading ...</p>
-    }
+    if (isLoading) return <p>Loading ...</p>
 
     const todayRateValue = this.todayRate().toString()
     const rateColor = (todayRateValue > 0) ? "green" : (todayRateValue < 0) ? "red" : "grey"
@@ -158,7 +156,7 @@ export default class Chart extends Component {
   }
 
   updateData(val = 3) {
-    const chartData = this.state.chartData
+    const {chartData} = this.state
     const {data, labels, today, todayOnly} = this.parseData(val)
 
     chartData.datasets[0].data = data
@@ -179,11 +177,11 @@ export default class Chart extends Component {
   }
 
   parseData(substract = 3) {
-    const dataset =      this.state.public_json
+    const {public_json} =      this.state
     const today =        moment(new Date()).format('YYYY-MM-DD') + " 00:00"
     const startDate =    moment(new Date()).subtract(substract, "days").format('YYYY-MM-DD') // By default, start day is -3 days from now
 
-    const values = dataset.filter((item) => { // Filter all objects, which is behind startDate
+    const values = public_json.filter((item) => { // Filter all objects, which is behind startDate
       //const currDate = item[0].slice(0, item[0].length - 5) // Slice hours and minutes from date
       const currDate = item[0]
       return (currDate >= startDate) && item
