@@ -85,8 +85,6 @@ export default class Chart extends Component {
   render() {
     const { isLoading } = this.state
 
-    if (isLoading) return <p>Loading ...</p>
-
     const todayRateValue = this.todayRate().toString()
     const rateColor = (todayRateValue > 0) ? "green" : (todayRateValue < 0) ? "red" : "grey"
 
@@ -97,10 +95,16 @@ export default class Chart extends Component {
             <a href={`https://alpari.com/ru/investor/pamm/${this.props.id}/`} target="_blank">{this.props.label}</a>
           </div>
           <div className="col-auto">
-            <small className="rate" style={{ color: rateColor }}>
-              {todayRateValue > 0 ? <span className="rate__icon">&#9652;</span> : (todayRateValue < 0) && <span className="rate__icon">&#9662;</span> }&nbsp;
-              { this.todayRate().toString() + "%" }
-            </small>
+            {
+              !isLoading ? (
+                <small className="rate" style={{ color: rateColor }}>
+                  {todayRateValue > 0 ? <span className="rate__icon">&#9652;</span> : (todayRateValue < 0) && <span className="rate__icon">&#9662;</span> }&nbsp;
+                  { this.todayRate().toString() + "%" }
+                </small>
+              ) : (
+                <img src="/loading.gif" alt="Loading..." width="40" height="40" />
+              )
+            }
           </div>
         </div>
         <Line
